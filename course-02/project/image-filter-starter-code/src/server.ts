@@ -1,6 +1,6 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import {filterImageFromURL, deleteLocalFiles} from './util/util';
+import {filterImageFromURL, deleteLocalFiles, isValidUrl, getFilePathsFromDirectory} from './util/util';
 
 (async () => {
 
@@ -38,6 +38,29 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   } );
   
 
+  app.get("/filteredimage", async (req: Request, res: Response) => {
+    const imageUrl = req.query.image_url;
+
+    if (!imageUrl) {
+      return res.status(400).send({message: 'Please input image url'})
+    }
+
+    if(!isValidUrl(imageUrl)) {
+      return res.status(400).send({message: 'Please input correct image url'})
+    }
+
+    const result = await filterImageFromURL(imageUrl)
+
+    res.sendFile(result)
+    
+  });
+
+  app.delete('/clearImages', async (req: Request, res: Response) => {
+    const tmpDir = __dirname + '/util/tmp'
+    const filePaths = await getFilePathsFromDirectory(tmpDir)
+    deleteLocalFiles(filePaths)
+    res.status(204).send()
+  })
   // Start the Server
   app.listen( port, () => {
       console.log( `server running http://localhost:${ port }` );
